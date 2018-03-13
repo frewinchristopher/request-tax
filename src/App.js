@@ -10,8 +10,9 @@ import {
 import Splash from './components/Splash'; // initial splash page
 import InteractiveDemo from './components/InteractiveDemo'; // initial splash page
 import Documentation from './components/Documentation'; // documentation
+import VerifyInvoice from './components/VerifyInvoice'; // verify an invoice
 import Credits from './components/Credits'; // home view
-
+import Footer from './components/Footer'; // footer
 
 class MenuWrap extends Component {
   constructor (props) {
@@ -66,10 +67,11 @@ class App extends Component {
   getItems() {
     let aItems = [
           <Link id="noUnderline" key="0" onClick={this.closeMenu} to="/"><h3 id="menu-title" className="request-text-gradient"><span id="titleText">RequestTax</span></h3></Link>,
-          <Link key="1" onClick={this.closeMenu} to="/interactive-demo"><i className="fa fa-fw fa-book"/><span>Interactive Demo</span></Link>,
+          <Link key="1" onClick={this.closeMenu} to="/interactive-demo"><i className="fa fa-fw fa-hand-paper-o"/><span>Interactive Demo</span></Link>,
           <Link key="2" onClick={this.closeMenu} to="/documentation"><i className="fa fa-fw fa-book"/><span>Documentation</span></Link>,
-          <Link key="3" onClick={this.closeMenu} to="/credits"><i className="fa fa-fw fa-list"/><span>Credits</span></Link>,
-          <a key="4" href="https://blog.request.network/request-network-project-update-january-19th-2018-announcing-a-30-million-request-fund-6a6f87d27d43"><i className="fa fa-fw fa-external-link" /><span>RequestTax is trying to win a grant under Request Network's Request Fund!</span></a>
+          <Link key="3" onClick={this.closeMenu} to="/verify-invoice"><i className="fa fa-fw fa-check-square"/><span>Verify Invoice</span></Link>,
+          <Link key="4" onClick={this.closeMenu} to="/credits"><i className="fa fa-fw fa-list"/><span>Credits</span></Link>,
+          <a key="5" href="https://blog.request.network/request-network-project-update-january-19th-2018-announcing-a-30-million-request-fund-6a6f87d27d43"><i className="fa fa-fw fa-external-link" /><span>RequestTax is trying to win a grant under Request Network's Request Fund!</span></a>
         ];
     return aItems;
   }
@@ -93,9 +95,11 @@ class App extends Component {
                   <Route exact path="/" component={Splash}></Route>
                   <Route exact path="/interactive-demo" component={InteractiveDemo}></Route>
                   <Route exact path="/documentation" component={Documentation}></Route>
+                  <Route exact path="/verify-invoice" component={VerifyInvoice}></Route>
                   <Route exact path="/credits" component={Credits}></Route>
                 </div>
             </main>
+            <Footer/>
           </div>
         </div>
       </Router>

@@ -30,25 +30,23 @@ class TaxDocumentation extends React.Component {
         <h3><span className="rainbow-underlined">Example</span></h3>
         <hr/>
         <h3><span className="rainbow-underlined">Minimum UI - all UI Elements deactivated:</span></h3>
-          <h4>UI parameter values:</h4>
-          showPayersLocation=false
-          showBuyersLocation=false
-          showVATPercentage=false
-          showVARAmount=false
-          sendTaxDirectlyToState=false
-          <h3><span className="rainbow-underlined">Example</span></h3>
-          <hr/>
-            <h3><span className="rainbow-underlined">Maximum UI - all UI Elements activated:</span></h3>
-              <h4>UI parameter values:</h4>
-              showPayersLocation=true
-              showBuyersLocation=true
-              showVATPercentage=true
-              showVARAmount=true
-              sendTaxDirectlyToState=true
-              <h3><span className="rainbow-underlined">Example</span></h3>
-              <hr/>
-
-
+        <h4>UI parameter values:</h4>
+        showPayersLocation=false
+        showBuyersLocation=false
+        showVATPercentage=false
+        showVARAmount=false
+        sendTaxDirectlyToState=false
+        <h3><span className="rainbow-underlined">Example</span></h3>
+        <hr/>
+        <h3><span className="rainbow-underlined">Maximum UI - all UI Elements activated:</span></h3>
+        <h4>UI parameter values:</h4>
+        showPayersLocation=true
+        showBuyersLocation=true
+        showVATPercentage=true
+        showVARAmount=true
+        sendTaxDirectlyToState=true
+        <h3><span className="rainbow-underlined">Example</span></h3>
+        <hr/>
         <h3><span className="rainbow-underlined">RequestTax for React</span></h3>
         <p>Coming soon.</p>
         <h3><span className="rainbow-underlined">RequestTax for Angular</span></h3>
@@ -57,8 +55,6 @@ class TaxDocumentation extends React.Component {
         <p>Coming soon.</p>
         <h3><span className="rainbow-underlined">Styling</span></h3>
         <p>Coming soon.</p>
-
-
       </div>
     )
   }

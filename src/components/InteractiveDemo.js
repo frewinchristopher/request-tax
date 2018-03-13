@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Grid, Container, Divider, Button, Message } from 'semantic-ui-react';
+import { Grid, Container, Divider, Button, Message, Icon } from 'semantic-ui-react';
 
 // custom components
 import ButtonThemes from './ButtonThemes'
@@ -22,7 +22,8 @@ class InteractiveDemo extends React.Component {
       showIcon: false,
       iconSide: '',
       withPopup: true,
-      messageToast: null
+      messageToast: null,
+      contractAddress: ""
     }
     this.updateButtonState = this.updateButtonState.bind(this);
     this.copyCode = this.copyCode.bind(this);
@@ -81,11 +82,11 @@ class InteractiveDemo extends React.Component {
           <RequestTaxButton {...this.state}/>
         </Container>
         <Divider />
-        <Button onClick={this.copyCode}>Copy React Code</Button>
+        <Button onClick={this.copyCode} secondary><Icon name="copy"/>Copy react.js code for this button</Button>
         <br/>
         <br/>
         <p>OR</p>
-        <Button onClick={this.exportCode}>Export React Code</Button>
+        <Button onClick={this.exportCode} secondary><Icon name="code"/>Export react.js code for this button</Button>
         <br/>
         { this.state.messageToast && this.state.messageToast }
       </div>

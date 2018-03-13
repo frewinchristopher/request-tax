@@ -15,7 +15,11 @@ class NetworkSettings extends React.Component {
     };
     this.handleChangeTestVsMain = this.handleChangeTestVsMain.bind(this);
     this.handleChangeOtherSettings = this.handleChangeOtherSettings.bind(this);
-
+    this.handleChangeContractAddress = this.handleChangeContractAddress.bind(this);
+  }
+  handleChangeContractAddress(event){
+    this.setState({contractAddress: event.target.value});
+    this.props.updateButtonState({contractAddress: event.target.value});
   }
   handleChangeTestVsMain(e, value) {
     console.log(value.value);
@@ -56,6 +60,15 @@ class NetworkSettings extends React.Component {
       <div>
         <h2><span className="rainbow-underlined">Network Settings</span></h2>
           <Form>
+            <Form.Field>
+              <Form.Input
+                label='Invocing Contract Address'
+                placeholder='0x010c2c4cb112d34e8b9375d045dad57e873abefc'
+                value={this.state.contractAddress}
+                onChange={this.handleChangeContractAddress}
+                style={{width:'24rem'}}
+                />
+            </Form.Field>
           <Form.Field>
             Main vs. Testnet: <b>{this.state.label}</b>
           </Form.Field>

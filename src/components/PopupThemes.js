@@ -3,15 +3,16 @@ import PropTypes from 'prop-types'
 import { Button, Icon, Form, Radio, Checkbox } from 'semantic-ui-react';
 
 class PopupThemes extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
-      withPopup: true,
+      label: 'modal',
+      withPopup: false,
       visualSettings: []
     };
+    this.props.updateButtonState({ withPopup: false });
     this.handleChangePopupVsModal = this.handleChangePopupVsModal.bind(this);
     this.handleChangeVisualSettings = this.handleChangeVisualSettings.bind(this);
-
   }
   handleChangePopupVsModal(e, value) {
     console.log(value.value);

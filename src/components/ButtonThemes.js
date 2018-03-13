@@ -3,20 +3,21 @@ import PropTypes from 'prop-types';
 import { Button, Icon, Form, Radio, Checkbox } from 'semantic-ui-react';
 
 class InteractiveDemo extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
-      value: "a",
-      buttonClass: "requestTax-button-theme-1",
-      buttonText: "Create a Request",
-      label: "Theme 1",
-      showIcon: false,
-      iconSide: "",
-      buttonTextValue: "a",
+      value: "c",
+      buttonClass: "requestTax-button-theme-3",
+      buttonText: "Pay with Request",
+      label: "Theme 3",
+      showIcon: true,
+      iconSide: "left",
+      buttonTextValue: "c",
       withPopup: true
     }
     this.handleChange = this.handleChange.bind(this);
     this.handleChangeButtonText = this.handleChangeButtonText.bind(this);
+    this.props.updateButtonState({ value: this.state.value, buttonClass: this.state.buttonClass, label: this.state.label, showIcon: this.state.showIcon, iconSide: this.state.iconSide, buttonText: this.state.buttonText })
   }
   handleChange(e, value) {
     console.log(value.value);

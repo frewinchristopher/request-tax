@@ -11,10 +11,6 @@ const params = {
   particles: {
       number: {
           value: 17,
-          density: {
-              enable: !0,
-              value_area: 800
-          }
       },
       color: {
           value: "#ffffff"
@@ -115,7 +111,7 @@ const params = {
           }
       }
   },
-  retina_detect: !0
+  retina_detect: true
 };
 
 const DemoRouteButton = () => (
