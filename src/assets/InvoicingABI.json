@@ -1,0 +1,112 @@
+[
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_requestorRequestId",
+				"type": "address"
+			},
+			{
+				"name": "_invoiceHash",
+				"type": "uint256"
+			}
+		],
+		"name": "validateInvoice",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "invoiceHashToPayeeId",
+		"outputs": [
+			{
+				"name": "requestId",
+				"type": "address"
+			},
+			{
+				"name": "isValue",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "invoiceHashToPayerId",
+		"outputs": [
+			{
+				"name": "requestId",
+				"type": "address"
+			},
+			{
+				"name": "isValue",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_payeeRequestId",
+				"type": "address"
+			},
+			{
+				"name": "_payerRequestId",
+				"type": "address"
+			},
+			{
+				"name": "_invoiceHash",
+				"type": "uint256"
+			}
+		],
+		"name": "storeInvoiceSimple",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "bStored",
+				"type": "bool"
+			}
+		],
+		"name": "InvoiceStored",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "sMessageCode",
+				"type": "string"
+			}
+		],
+		"name": "InvoiceValid",
+		"type": "event"
+	}
+]

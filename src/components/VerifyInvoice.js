@@ -4,8 +4,9 @@ import { Button, Icon, Modal, Form } from 'semantic-ui-react';
 import { keccak256 } from 'js-sha3';
 var Web3 = require('web3');
 
-// custom images
-let request = require("../images/request.png");
+// requires
+let request = require("../images/request.png"); // require image
+const ABI = require('../assets/InvoicingABI.json');
 
 // connect to ethereum network (local ganache) and access the contract
 // var web3 = new Web3("ws://localhost:7545"); // local ganache
@@ -21,16 +22,8 @@ if (typeof web3 !== 'undefined') {
   // set the provider you want from Web3.providers
   web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
-const jsonInterface = JSON.parse('[ { "constant": false, "inputs": [ { "name": "_requestorRequestId", "type": "address" }, { "name": "_invoiceHash", "type": "uint256" } ], "name": "validateInvoice", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "uint256" } ], "name": "invoiceHashToPayeeId", "outputs": [ { "name": "requestId", "type": "address" }, { "name": "isValue", "type": "bool" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "uint256" } ], "name": "invoiceHashToPayerId", "outputs": [ { "name": "requestId", "type": "address" }, { "name": "isValue", "type": "bool" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [ { "name": "_payeeRequestId", "type": "address" }, { "name": "_payerRequestId", "type": "address" }, { "name": "_invoiceHash", "type": "uint256" } ], "name": "storeInvoiceSimple", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "bStored", "type": "bool" } ], "name": "InvoiceStored", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "bValid", "type": "bool" } ], "name": "InvoiceValid", "type": "event" } ]');
-var InvoicingContract = web3.eth.contract(jsonInterface);
 
-// InvoicingContract.events.InvoiceValid(function(error, result) {
-//     if (!error) {
-//         console.log(result);
-//     } else {
-//         console.log("Error: " + error);
-//     }
-// });
+var InvoicingContract = web3.eth.contract(ABI);
 
 class VerifyInvoice extends React.Component {
   constructor() {
@@ -56,10 +49,11 @@ class VerifyInvoice extends React.Component {
     this.setState({contractAddress: event.target.value});
   }
   onChangeInvoiceFileInput(event) {
-    if (web3.isAddress(this.state.contractAddress)) {
-      this.setState({bContractInputError: true});
-      return; // can't go any further without a proper contract address
-    }
+    console.log(web3.isAddress(this.state.contractAddress));
+    // if (web3.isAddress(this.state.contractAddress)) {
+    //   this.setState({bContractInputError: true});
+    //   return; // can't go any further without a proper contract address
+    // }
     this.setState({bRequestorIdModalOpen: true, oInvoiceFile: event.target.files[0]});
   }
   closeRequestorIdModal() {
@@ -82,13 +76,25 @@ class VerifyInvoice extends React.Component {
      var invoiceValidEvent = InvoicingContractInstance.InvoiceValid();
      // register event before calling function
      invoiceValidEvent.watch(function(error, result) {
-       console.log(error);
-       console.log(result);
        if (!error) {
-         if (result.args.bValid) {
-           that.setState({sMessage: "This is a valid invoice for the given Request ID!"});
-         } else {
-           that.setState({sMessage: "The invoice could not be found or you are not an owner of the invoice."});
+         switch (result.args.sMessageCode) {
+           // see lines 34-50 in Invoicing.sol for these message codes
+           case "noExist":
+            that.setState({sMessage: "This invoice does not exist."});
+            break;
+           case "error":
+            that.setState({sMessage: "There is an error with this invoice."});
+            break;
+           case "payee":
+            that.setState({sMessage: "This is a valid invoice. You were the PAYEE of this invoice."});
+            break;
+           case "payer":
+            that.setState({sMessage: "This is a valid invoice. You were the PAYER of this invoice."});
+            break;
+           case "notOwner":
+            that.setState({sMessage: "You are not the owner of this invoice."});
+            break;
+           // ... more to come later?
          }
        } else {
          that.setState({sMessage: error});

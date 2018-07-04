@@ -56,89 +56,92 @@ class NetworkSettings extends React.Component {
     } else {
       aList = "(None selected)";
     }
+    // once mainnet / test net integrated
+    // <Form.Field>
+    //   Main vs. Testnet: <b>{this.state.label}</b>
+    // </Form.Field>
+    // <Form.Field>
+    //   <Radio
+    //     label='Testnet'
+    //     name='radioGroup'
+    //     value='testnet'
+    //     checked={this.state.testVsMainValue === 'testnet'}
+    //     onChange={this.handleChangeTestVsMain}
+    //   />
+    // </Form.Field>
+    // <Form.Field>
+    //   <Radio
+    //     label='Mainnet'
+    //     name='radioGroup'
+    //     value='mainnet'
+    //     checked={this.state.testVsMainValue === 'mainnet'}
+    //     onChange={this.handleChangeTestVsMain}
+    //   />
+    // </Form.Field>
+
+  //   <Form>
+  //     Other Settings: <b>{aList}</b>
+  //     <Form.Field>
+  //       <Checkbox
+  //         label='A'
+  //         name='checkboxGroup'
+  //         value='a'
+  //         checked={this.state.showFromLocation}
+  //         onChange={this.handleChangeOtherSettings}
+  //       />
+  //     </Form.Field>
+  //     <Form.Field>
+  //       <Checkbox
+  //         label='B'
+  //         name='checkboxGroup'
+  //         value='b'
+  //         checked={this.state.showFromLocation}
+  //         onChange={this.handleChangeOtherSettings}
+  //       />
+  //     </Form.Field>
+  //     <Form.Field>
+  //       <Checkbox
+  //         label='C'
+  //         name='checkboxGroup'
+  //         value='c'
+  //         checked={this.state.showConfirmations}
+  //         onChange={this.handleChangeOtherSettings}
+  //       />
+  //     </Form.Field>
+  //     <Form.Field>
+  //       <Checkbox
+  //         label='D'
+  //         name='checkboxGroup'
+  //         value='d'
+  //         checked={this.state.showVATPercentage}
+  //         onChange={this.handleChangeOtherSettings}
+  //       />
+  //     </Form.Field>
+  //     <Form.Field>
+  //       <Checkbox
+  //         label='E'
+  //         name='checkboxGroup'
+  //         value='e'
+  //         checked={this.state.showVATAmount}
+  //         onChange={this.handleChangeOtherSettings}
+  //       />
+  //     </Form.Field>
+  // </Form>
+
     return (
       <div>
         <h2><span className="rainbow-underlined">Network Settings</span></h2>
           <Form>
             <Form.Field>
               <Form.Input
-                label='Invocing Contract Address'
+                label='Invoicing Contract Address (Supports local testrpc)'
                 placeholder='0x010c2c4cb112d34e8b9375d045dad57e873abefc'
                 value={this.state.contractAddress}
                 onChange={this.handleChangeContractAddress}
                 style={{width:'24rem'}}
                 />
             </Form.Field>
-          <Form.Field>
-            Main vs. Testnet: <b>{this.state.label}</b>
-          </Form.Field>
-          <Form.Field>
-            <Radio
-              label='Testnet'
-              name='radioGroup'
-              value='testnet'
-              checked={this.state.testVsMainValue === 'testnet'}
-              onChange={this.handleChangeTestVsMain}
-            />
-          </Form.Field>
-          <Form.Field>
-            <Radio
-              label='Mainnet'
-              name='radioGroup'
-              value='mainnet'
-              checked={this.state.testVsMainValue === 'mainnet'}
-              onChange={this.handleChangeTestVsMain}
-            />
-          </Form.Field>
           </Form>
-          <Form>
-            Other Settings: <b>{aList}</b>
-            <Form.Field>
-              <Checkbox
-                label='A'
-                name='checkboxGroup'
-                value='a'
-                checked={this.state.showFromLocation}
-                onChange={this.handleChangeOtherSettings}
-              />
-            </Form.Field>
-            <Form.Field>
-              <Checkbox
-                label='B'
-                name='checkboxGroup'
-                value='b'
-                checked={this.state.showFromLocation}
-                onChange={this.handleChangeOtherSettings}
-              />
-            </Form.Field>
-            <Form.Field>
-              <Checkbox
-                label='C'
-                name='checkboxGroup'
-                value='c'
-                checked={this.state.showConfirmations}
-                onChange={this.handleChangeOtherSettings}
-              />
-            </Form.Field>
-            <Form.Field>
-              <Checkbox
-                label='D'
-                name='checkboxGroup'
-                value='d'
-                checked={this.state.showVATPercentage}
-                onChange={this.handleChangeOtherSettings}
-              />
-            </Form.Field>
-            <Form.Field>
-              <Checkbox
-                label='E'
-                name='checkboxGroup'
-                value='e'
-                checked={this.state.showVATAmount}
-                onChange={this.handleChangeOtherSettings}
-              />
-            </Form.Field>
-        </Form>
       </div>
     );
   }

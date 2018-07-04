@@ -12,6 +12,7 @@ import injectFieldsIntoInvoice from '../utils/helpers';
 // requires
 const fs = require('fs');
 var Web3 = require('web3');
+const ABI = require('../assets/InvoicingABI.json');
 
 // add virtual fonts for pdfMake
 const { vfs } = vfsFonts.pdfMake;
@@ -36,8 +37,8 @@ if (typeof web3 !== 'undefined') {
   // set the provider you want from Web3.providers
   web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
-const jsonInterface = JSON.parse('[ { "constant": false, "inputs": [ { "name": "_requestorRequestId", "type": "address" }, { "name": "_invoiceHash", "type": "uint256" } ], "name": "validateInvoice", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "uint256" } ], "name": "invoiceHashToPayeeId", "outputs": [ { "name": "requestId", "type": "address" }, { "name": "isValue", "type": "bool" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "uint256" } ], "name": "invoiceHashToPayerId", "outputs": [ { "name": "requestId", "type": "address" }, { "name": "isValue", "type": "bool" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [ { "name": "_payeeRequestId", "type": "address" }, { "name": "_payerRequestId", "type": "address" }, { "name": "_invoiceHash", "type": "uint256" } ], "name": "storeInvoiceSimple", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "bStored", "type": "bool" } ], "name": "InvoiceStored", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "bValid", "type": "bool" } ], "name": "InvoiceValid", "type": "event" } ]');
-var InvoicingContract = web3.eth.contract(jsonInterface);
+
+var InvoicingContract = web3.eth.contract(ABI);
 
 const cryptoCurrencyOptions = [ { key: 'ETH', value: 'ETH', text: 'ETH' },
 { key: 'BTC', value: 'BTC', text: 'BTC' },
@@ -55,15 +56,15 @@ class RequestTaxButton extends React.Component {
       sCryptoCurrency: "ETH",
       bFullSenderAddress: false,
       bFullReceiverAddress: false,
-      bRequestErrorModalOpen: false,
+      bErrorModalOpen: false,
       bPayWithRequestModalOpen: false,
+      bPayWithRequestPopupOpen: false,
       stateAddress: "0x1bc3850619803C48b79481A3Aee167141be20432",
       stateAddressDescription: "New York State Department of Taxation and Finance",
       taxPercent: 20,
       taxDescription: "Value Added Tax United Kingdom",
       bAccordianSender: false,
       bAccordianReceiver: false,
-      bContractErrorModalOpen: false
       // uniqInvoiceId --> global nonce generated at client
       // toCompanyName --> client
       // toCompanyStreet --> client
@@ -86,32 +87,40 @@ class RequestTaxButton extends React.Component {
       // pdfVersion --> client, reverse compatible, specific per company - may be difficult to inject fields?
       // pdfBase64 --> compiled pdfVersion
     };
-    this.openModal = this.openModal.bind(this);
-    this.closeModal = this.closeModal.bind(this);
+    this.onClickRequestButton = this.onClickRequestButton.bind(this);
     this.onClickSubmit = this.onClickSubmit.bind(this);
     this.onChangeAmount = this.onChangeAmount.bind(this);
     this.onChangeCryptoCurrency = this.onChangeCryptoCurrency.bind(this);
     this.onClickAccordian = this.onClickAccordian.bind(this);
-    this.onCloseRequestErrorModal = this.onCloseRequestErrorModal.bind(this);
-    this.openRequestErrorModal = this.openRequestErrorModal.bind(this);
+    this.closeErrorModal = this.closeErrorModal.bind(this);
+    this.openErrorModal = this.openErrorModal.bind(this);
     this.isSimpleFormValid = this.isSimpleFormValid.bind(this);
     this.isComplexFormValid = this.isComplexFormValid.bind(this);
     this.onChangeFormField = this.onChangeFormField.bind(this);
     this.submitInvoiceHash = this.submitInvoiceHash.bind(this);
     this.onCloseMessageModal = this.onCloseMessageModal.bind(this);
-    this.onCloseContractErrorModal = this.onCloseContractErrorModal.bind(this);
+    this.onClosePayWithRequestModal = this.onClosePayWithRequestModal.bind(this);
+    this.onClosePayWithRequestPopup = this.onClosePayWithRequestPopup.bind(this);
+
   }
-  openModal() {
-    this.setState({bPayWithRequestModalOpen: true});
-  }
-  closeModal() {
-    this.setState({bPayWithRequestModalOpen: false});
-  }
-  onClickSubmit() {
+  onClickRequestButton(bWithPopup) {
     if (!web3.isAddress(this.props.contractAddress)) {
-      this.setState({bContractErrorModalOpen: true});
+      this.openErrorModal("Please enter a valid invoicing contract address in the network settings!")
       return;
     }
+    if (bWithPopup) {
+      this.setState({bPayWithRequestPopupOpen: true});
+    } else {
+      this.setState({bPayWithRequestModalOpen: true});
+    }
+  }
+  onClosePayWithRequestModal() {
+    this.setState({bPayWithRequestModalOpen: false});
+  }
+  onClosePayWithRequestPopup() {
+    this.setState({bPayWithRequestPopupOpen: false});
+  }
+  onClickSubmit() {
     // generate and open invoice as pdf
     if (this.isSimpleFormValid()) {
       // ok great, now inject state fields into document definition before building dd
@@ -134,9 +143,9 @@ class RequestTaxButton extends React.Component {
           console.log(base64Hash);
           that.submitInvoiceHash(base64Hash);
       });
-      this.closeModal();
+      this.onClosePayWithRequestModal();
     } else { // open the error modal propting what the user has to do
-      this.openRequestErrorModal(); // some fucked state error, no idea why it keeps automatically closing
+      this.openErrorModal("One or more of the required fields is empty or invalid."); // some fucked state error, no idea why it keeps automatically closing
     }
   }
   submitInvoiceHash(base64Hash) {
@@ -147,12 +156,12 @@ class RequestTaxButton extends React.Component {
     invoiceStoredEvent.watch(function(error, result) {
       if (!error) {
         if (result.args.bStored) {
-          that.setState({sMessage: "Invoice successfully stored on the Request Network."});
+          that.setState({sInvoiceStorageMessage: "Invoice successfully stored on the Request Network."});
         } else {
-          that.setState({sMessage: "Error storing the invoice on the Request Network."});
+          that.setState({sInvoiceStorageMessage: "Error storing the invoice on the Request Network."});
         }
       } else {
-        that.setState({sMessage: "Unknown error storing the invoice on the Request Network."});
+        that.setState({sInvoiceStorageMessage: "Unknown error storing the invoice on the Request Network."});
       }
       that.setState({bMessageModalOpen: true});
     });
@@ -191,16 +200,11 @@ class RequestTaxButton extends React.Component {
       this.setState({bAccordianReceiver: !this.state.bAccordianReceiver});
     }
   }
-  openRequestErrorModal() {
-    console.log("opening modal...");
-    this.setState({bRequestErrorModalOpen: true});
+  openErrorModal(sErrorMessage) {
+    this.setState({sErrorMessage: sErrorMessage, bErrorModalOpen: true});
   }
-  onCloseRequestErrorModal() {
-    console.log("closing modal...");
-    this.setState({bRequestErrorModalOpen: false});
-  }
-  onCloseContractErrorModal() {
-    this.setState({bContractErrorModalOpen: false});
+  closeErrorModal() {
+    this.setState({bErrorModalOpen: false});
   }
   onCloseMessageModal() {
     this.setState({bMessageModalOpen: false});
@@ -215,43 +219,197 @@ class RequestTaxButton extends React.Component {
   }
   render() {
     console.log(this.state);
-    let ButtonPart, popupContent, payWithRequestModal, sStateAddressEtherscanLink, requestErrorModal, messageModal, contractErrorModal;
+    let oPayWithRequestButton, oPayWithRequestFormContent, oPayWithRequestModal, oPayWithRequestPopup, sStateAddressEtherscanLink, oErrorModal, messageModal, contractErrorModal;
     let sTotalPrice;
     if (this.state.amount) {
       sTotalPrice = (this.state.amount * (1 + (this.state.taxPercent / 100))).toString(); // float for price including tax
     } else {
       sTotalPrice = "0";
     }
-    sStateAddressEtherscanLink = "https://etherscan.io/address/" + this.state.stateAddress;
-    if (this.props.withPopup) {
-      ButtonPart = <a className={this.props.buttonClass}>
-        <span>{this.props.showIcon && this.props.iconSide === 'left' && <img src={request} height="30px" style={{marginRight:'18px'}}/>} {this.props.buttonText} {this.props.showIcon && this.props.iconSide === 'right' && <img src={request} height="30px" style={{marginLeft:'18px'}}/>}</span>
-      </a>;
-      popupContent = <h1>{this.props.buttonText}</h1>;
-    } else { // we need an onclick function for the modal
-      ButtonPart = <a className={this.props.buttonClass} onClick={this.openModal}>
-        <span>{this.props.showIcon && this.props.iconSide === 'left' && <img src={request} height="30px" style={{marginRight:'18px'}}/>} {this.props.buttonText} {this.props.showIcon && this.props.iconSide === 'right' && <img src={request} height="30px" style={{marginLeft:'18px'}}/>}</span>
-      </a>;
+    sStateAddressEtherscanLink = "https://etherscan.io/address/" + this.state.stateAddress; // link so the user can see the (perhaps though Ethereum Name Service? Or build one for Reqeust!)
 
-      requestErrorModal = <Modal size="small" open={this.state.bRequestErrorModalOpen}>
-        <Modal.Header>Request Error</Modal.Header>
+    oPayWithRequestFormContent = <div>
+    <h2 style={{color:'#262626'}}>Sender's (Payee's) Information</h2>
+      <Form>
+        <Form.Group widths='equal'>
+          <Form.Input
+            id="payeeID"
+            label="Request ID (for now, an ETH address)"
+            placeholder="0xd707fc7be44ef31b7dc7ff5715fe7a5e1fcd6f74"
+            value={this.state.payeeID}
+            onChange={this.onChangeFormField}
+            />
+        </Form.Group>
+      </Form>
+    <Accordion>
+      <Accordion.Title active={this.state.bAccordianSender} index={0} onClick={() => this.onClickAccordian(0)}>
+        <Icon name='dropdown' />
+        If unknown, full name and address here
+      </Accordion.Title>
+      <Accordion.Content active={this.state.bAccordianSender}>
+        <Form>
+          <Form.Group widths='equal'>
+            <Form.Input
+              label="Company Name"
+              placeholder="Apple"
+              />
+            <Form.Input
+              label="Street"
+              placeholder="1 Infinite Loop"
+              />
+          </Form.Group>
+          <Form.Group widths='equal'>
+            <Form.Input
+              label="City"
+              placeholder="Cupertino"
+              />
+              <Form.Input
+                label="State/District"
+                placeholder="California"
+                />
+            <Form.Input
+              label="ZIP"
+              placeholder="95014"
+              />
+
+          </Form.Group>
+          <Form.Group widths='equal'>
+
+              <Form.Input
+                label="Telephone"
+                placeholder="1-408-996-1010"
+                />
+            <Form.Input
+              label="Country"
+              placeholder="United States"
+              />
+          </Form.Group>
+        </Form>
+      </Accordion.Content>
+    </Accordion>
+    <h2 style={{color:'#262626'}}>Receiver's (Payer's) Information</h2>
+      <Form>
+        <Form.Group widths='equal'>
+          <Form.Input
+            id="payerID"
+            label="Request ID (for now, an ETH address)"
+            placeholder="0xd707fc7be44ef31b7dc7ff5715fe7a5e1fcd6f74"
+            value={this.state.payerID}
+            onChange={this.onChangeFormField}
+            />
+        </Form.Group>
+      </Form>
+      <Accordion>
+        <Accordion.Title active={this.state.bAccordianReceiver} index={1} onClick={() => this.onClickAccordian(1)}>
+          <Icon name='dropdown' />
+          If unknown, the full name and address here
+        </Accordion.Title>
+        <Accordion.Content active={this.state.bAccordianReceiver}>
+          <Form>
+            <Form.Group widths='equal'>
+              <Form.Input
+                label="Company Name"
+                placeholder="Google"
+                />
+              <Form.Input
+                label="Street"
+                placeholder="500 W 2nd St Suite 2900"
+                />
+            </Form.Group>
+            <Form.Group widths='equal'>
+              <Form.Input
+                label="City"
+                placeholder="Austin"
+                />
+                <Form.Input
+                  label="State/District"
+                  placeholder="Texas"
+                  />
+              <Form.Input
+                label="ZIP"
+                placeholder="78701"
+                />
+
+            </Form.Group>
+            <Form.Group widths='equal'>
+              <Form.Input
+                label="Telephone"
+                placeholder="1-512-343-5283"
+                />
+              <Form.Input
+                label="Country"
+                placeholder="United States"
+                />
+            </Form.Group>
+          </Form>
+        </Accordion.Content>
+      </Accordion>
+      <h2 style={{color:'#262626'}}>Transaction</h2>
+      <Form>
+      <Form.Group widths='equal'>
+         <Form.Input
+           id="description"
+           label="Subject/Description of goods/services:"
+           placeholder="Description..."
+           onChange={this.onChangeFormField}
+           />
+       </Form.Group>
+       <Form.Group widths='equal'>
+            <Form.Input
+              id="amount"
+              label="Request Amount"
+              placeholder="1.234"
+              value={this.state.amount}
+              error={this.state.amountError}
+              onChange={this.onChangeFormField}
+              />
+            <Form.Dropdown label="Currency" defaultValue={this.state.sCryptoCurrency} selection placeholder='Select...' options={cryptoCurrencyOptions} onChange={this.onChangeCryptoCurrency}/>
+          </Form.Group>
+        <Form.Group>
+          <span style={{color:'#262626'}}>
+            VAT<b>*</b>: <b>{this.state.taxPercent.toString()}%</b>
+          </span>
+        </Form.Group>
+        <Form.Group>
+          <sup style={{color:'#262626'}}>
+          <Icon name='check circle' color="green"/> <span style={{color:'green'}}>Verified:</span> {this.state.taxDescription} <a style={{color:'#1C76C0',textDecoration:'underlined'}} href="#wrong-tax-amount">(wrong?)</a>
+          </sup>
+        </Form.Group>
+         <Form.Group>
+           <span style={{color:'#262626'}}>
+             Total: {sTotalPrice} {this.state.sCryptoCurrency}
+           </span>
+         </Form.Group>
+       </Form>
+    </div>
+
+      oPayWithRequestButton = <a className={this.props.buttonClass} onClick={() => this.onClickRequestButton(this.props.withPopup)}>
+        <span>{this.props.showIcon && this.props.iconSide === 'left' && <img src={request} height="30px" style={{marginRight:'18px'}}/>} {this.props.buttonText} {this.props.showIcon && this.props.iconSide === 'right' && <img src={request} height="30px" style={{marginLeft:'18px'}}/>}</span>
+      </a>
+
+      oErrorModal = <Modal
+        size="small"
+        open={this.state.bErrorModalOpen}>
+        <Modal.Header>Error</Modal.Header>
         <Modal.Content>
           <Modal.Description>
-            <p style={{color:'#262626'}}>One or more of the required fields is empty or invalid.</p>
+            <p style={{color:'#262626'}}>{this.state.sErrorMessage}</p>
           </Modal.Description>
         </Modal.Content>
         <Modal.Actions>
-          <Button secondary onClick={this.onCloseRequestErrorModal}>
+          <Button secondary onClick={this.closeErrorModal}>
             OK
           </Button>
         </Modal.Actions>
       </Modal>
 
-      messageModal = <Modal size="small" open={this.state.bMessageModalOpen}>
+      messageModal = <Modal
+        size="small"
+        open={this.state.bMessageModalOpen}>
         <Modal.Header>Invoice Storage Response</Modal.Header>
         <Modal.Content>
           <Modal.Description>
-            <p style={{color:'#262626'}}>{this.state.sMessage}</p>
+            <p style={{color:'#262626'}}>{this.state.sInvoiceStorageMessage}</p>
           </Modal.Description>
         </Modal.Content>
         <Modal.Actions>
@@ -261,207 +419,52 @@ class RequestTaxButton extends React.Component {
         </Modal.Actions>
       </Modal>
 
-      contractErrorModal = <Modal size="small" open={this.state.bContractErrorModalOpen}>
-        <Modal.Header>Invoice Storage Response</Modal.Header>
-        <Modal.Content>
-          <Modal.Description>
-            <p style={{color:'#262626'}}>{this.state.sMessage}</p>
-          </Modal.Description>
-        </Modal.Content>
-        <Modal.Actions>
-          <Button secondary onClick={this.onCloseContractErrorModal}>
-            OK
-          </Button>
-        </Modal.Actions>
-      </Modal>
-
-      payWithRequestModal = <Modal size="small" open={this.state.bPayWithRequestModalOpen} onClose={this.closeModal} closeIcon>
+      oPayWithRequestModal = <Modal
+        size="small"
+        open={this.state.bPayWithRequestModalOpen}
+        onClose={this.onClosePayWithRequestModal}
+        closeIcon>
           <Modal.Header>
             {this.props.buttonText}
             <br/>
             {new Date().toLocaleString()}
           </Modal.Header>
           <Modal.Content>
-            <h2 style={{color:'#262626'}}>Sender's (Payee's) Information</h2>
-              <Form>
-                <Form.Group widths='equal'>
-                  <Form.Input
-                    id="payeeID"
-                    label="Request ID"
-                    placeholder="0xd707fc7be44ef31b7dc7ff5715fe7a5e1fcd6f74"
-                    value={this.state.payeeID}
-                    onChange={this.onChangeFormField}
-                    />
-                </Form.Group>
-              </Form>
-            <Accordion>
-              <Accordion.Title active={this.state.bAccordianSender} index={0} onClick={() => this.onClickAccordian(0)}>
-                <Icon name='dropdown' />
-                If unknown, full name and address here
-              </Accordion.Title>
-              <Accordion.Content active={this.state.bAccordianSender}>
-                <Form>
-                  <Form.Group widths='equal'>
-                    <Form.Input
-                      label="Company Name"
-                      placeholder="Apple"
-                      />
-                    <Form.Input
-                      label="Street"
-                      placeholder="1 Infinite Loop"
-                      />
-                  </Form.Group>
-                  <Form.Group widths='equal'>
-                    <Form.Input
-                      label="City"
-                      placeholder="Cupertino"
-                      />
-                      <Form.Input
-                        label="State/District"
-                        placeholder="California"
-                        />
-                    <Form.Input
-                      label="ZIP"
-                      placeholder="95014"
-                      />
-
-                  </Form.Group>
-                  <Form.Group widths='equal'>
-
-                      <Form.Input
-                        label="Telephone"
-                        placeholder="1-408-996-1010"
-                        />
-                    <Form.Input
-                      label="Country"
-                      placeholder="United States"
-                      />
-                  </Form.Group>
-                </Form>
-              </Accordion.Content>
-            </Accordion>
-            <h2 style={{color:'#262626'}}>Receiver's (Payer's) Information</h2>
-              <Form>
-                <Form.Group widths='equal'>
-                  <Form.Input
-                    id="payerID"
-                    label="Request ID"
-                    placeholder="0xd707fc7be44ef31b7dc7ff5715fe7a5e1fcd6f74"
-                    value={this.state.payerID}
-                    onChange={this.onChangeFormField}
-                    />
-                </Form.Group>
-              </Form>
-              <Accordion>
-                <Accordion.Title active={this.state.bAccordianReceiver} index={1} onClick={() => this.onClickAccordian(1)}>
-                  <Icon name='dropdown' />
-                  If unknown, the full name and address here
-                </Accordion.Title>
-                <Accordion.Content active={this.state.bAccordianReceiver}>
-                  <Form>
-                    <Form.Group widths='equal'>
-                      <Form.Input
-                        label="Company Name"
-                        placeholder="Google"
-                        />
-                      <Form.Input
-                        label="Street"
-                        placeholder="500 W 2nd St Suite 2900"
-                        />
-                    </Form.Group>
-                    <Form.Group widths='equal'>
-                      <Form.Input
-                        label="City"
-                        placeholder="Austin"
-                        />
-                        <Form.Input
-                          label="State/District"
-                          placeholder="Texas"
-                          />
-                      <Form.Input
-                        label="ZIP"
-                        placeholder="78701"
-                        />
-
-                    </Form.Group>
-                    <Form.Group widths='equal'>
-                      <Form.Input
-                        label="Telephone"
-                        placeholder="1-512-343-5283"
-                        />
-                      <Form.Input
-                        label="Country"
-                        placeholder="United States"
-                        />
-                    </Form.Group>
-                  </Form>
-                </Accordion.Content>
-              </Accordion>
-              <h2 style={{color:'#262626'}}>Transaction</h2>
-              <Form>
-              <Form.Group widths='equal'>
-                 <Form.Input
-                   id="description"
-                   label="Subject/Description of goods/services:"
-                   placeholder="Description..."
-                   onChange={this.onChangeFormField}
-                   />
-               </Form.Group>
-               <Form.Group widths='equal'>
-                    <Form.Input
-                      id="amount"
-                      label="Request Amount"
-                      placeholder="1.234"
-                      value={this.state.amount}
-                      error={this.state.amountError}
-                      onChange={this.onChangeFormField}
-                      />
-                    <Form.Dropdown label="Currency" defaultValue={this.state.sCryptoCurrency} selection placeholder='Select...' options={cryptoCurrencyOptions} onChange={this.onChangeCryptoCurrency}/>
-                  </Form.Group>
-                <Form.Group>
-                  <span style={{color:'#262626'}}>
-                    VAT<b>*</b>: <b>{this.state.taxPercent.toString()}%</b>
-                  </span>
-                </Form.Group>
-                <Form.Group>
-                  <sup style={{color:'#262626'}}>
-                  <Icon name='check circle' color="green"/> <span style={{color:'green'}}>Verified:</span> {this.state.taxDescription} <a style={{color:'#1C76C0',textDecoration:'underlined'}} href="#wrong-tax-amount">(wrong?)</a>
-                  </sup>
-                </Form.Group>
-                 <Form.Group>
-                   <span style={{color:'#262626'}}>
-                     Total: {sTotalPrice} {this.state.sCryptoCurrency}
-                   </span>
-                 </Form.Group>
-               </Form>
+            {oPayWithRequestFormContent}
           </Modal.Content>
           <Modal.Actions>
-            <Button secondary onClick={this.closeModal}>
+            <Button secondary onClick={this.onClosePayWithRequestModal}>
               Cancel
             </Button>
             <Button primary onClick={() => this.onClickSubmit()}>
               {this.props.buttonText + ' with generated VAT invoice'}
             </Button>
-
           </Modal.Actions>
         </Modal>
-    }
-    return (
-      <div>
-      { this.props.withPopup &&
-      <Popup
-        trigger={ButtonPart}
-        content={popupContent}
-        on='click'
+
+      oPayWithRequestPopup = <Popup
+        trigger={oPayWithRequestButton}
+        open={this.state.bPayWithRequestPopupOpen}
+        content={oPayWithRequestFormContent}
         position='top right'
-      /> }
-      { !this.props.withPopup &&
+        on='click'
+      />
+
+    return (
         <div>
-        {ButtonPart}
-        {payWithRequestModal}
-        {requestErrorModal}
-        {messageModal}
-        </div> }
+          { this.props.withPopup &&
+            <div>
+              {oPayWithRequestPopup}
+            </div>
+          }
+          { !this.props.withPopup &&
+            <div>
+              {oPayWithRequestButton}
+              {oPayWithRequestModal}
+            </div>
+          }
+          {oErrorModal}
+          {messageModal}
         </div>
     );
   }

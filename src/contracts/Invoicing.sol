@@ -6,7 +6,7 @@ contract Invoicing {
 
   // events! (one for each function right now)
   event InvoiceStored(bool bStored);
-  event InvoiceValid(bool bValid);
+  event InvoiceValid(string sMessageCode);
 
   struct Invoice {
     address requestId;
@@ -30,15 +30,23 @@ contract Invoicing {
     if (invoiceHashToPayerId[_invoiceHash].isValue) {
       _count++;
     }
-    if (_count != 1) {
-      InvoiceValid(false); // we should find this request ID - hash combo exactly once - 0 it doesn't exist, 2 something fishy is going on
-    }
+     // we should find this request ID / hash combo exactly twice (for both involved parties) - if count is 0 the invoice doesn't exist, if it is 1 something fishy is going on (invoice assigned to only one party)
+     if (_count == 0) {
+       InvoiceValid('noExist'); // this invoice ID does not exist
+       return;
+     }
+     if (_count == 1) {
+       InvoiceValid('error'); // this invoice ID does not exist
+       return;
+     }
+
+    // otherwise it exists, figure out if 1. it is the payee requesting, 2. it is the payer requesting, or 3. they are not the owner and return false
     if (invoiceHashToPayeeId[_invoiceHash].requestId == _requestorRequestId) { // so were they the payee?
-      InvoiceValid(true);
+      InvoiceValid('payee');
     } else if (invoiceHashToPayerId[_invoiceHash].requestId == _requestorRequestId) { // or the payer?
-      InvoiceValid(true);
+      InvoiceValid('payer');
     } else {
-      InvoiceValid(false); // they are not either, somehow they had an invoice from a different party (but they won't know that)
+      InvoiceValid('notOwner'); // they are not either, somehow they had an invoice from a different party (but they won't know that)
     }
   }
   /// @notice The biggun' for RequestTax - generates a the (unfortunately giant) list of parameters is as follows:
